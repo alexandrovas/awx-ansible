@@ -1,0 +1,10 @@
+---
+# defaults file for ceph-admin
+ceph_release: nautilus
+ceph_admin_user: cephadmin
+ceph_deploy_directory: "/home/{{ ceph_admin_user }}"
+ceph_osd_hosts: []
+ceph_mon_hosts: []
+ceph_mgr_hosts: []
+ceph_mds_hosts: []
+ceph_osd_disks: []

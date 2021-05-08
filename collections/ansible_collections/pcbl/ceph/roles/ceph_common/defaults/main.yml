@@ -1,0 +1,8 @@
+---
+# defaults file for ceph-common
+
+ceph_release: nautilus
+ceph_admin_user: cephadmin
+ceph_admin_password: SuperPassword
+ceph_admin_home_dir: "/home/{{ ceph_admin_user }}"
+ceph_admin_ssh_public_key: ''

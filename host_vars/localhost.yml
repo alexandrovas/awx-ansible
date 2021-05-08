@@ -1,0 +1,55 @@
+# hostname ssl certificate (haproxy endpoint)
+# awx_cluster_hostname: awx.shared.pcbl.local
+# Example: https://github.com/ansible/awx/blob/devel/installer/inventory
+
+awx_version: 17.1.0
+dockerhub_version: "{{ awx_version }}"
+# Remove these lines if you want to run a local image build
+# Otherwise the setup playbook will install the official Ansible images. Versions may
+# be selected based on: latest, 1, 1.0, 1.0.0, 1.0.0.123
+# by default the base will be used to search for ansible/awx
+dockerhub_base: ansible
+
+# Common Docker parameters
+awx_web_hostname: "{{ ansible_fqdn }}"
+awx_task_hostname: "{{ ansible_fqdn }}"
+host_port: 80
+# host_port_ssl: 443
+# ssl_certificate: "/opt/certs/awx/{{ awx_web_hostname }}.crt"
+# # Optional key file
+# ssl_certificate_key: "/opt/certs/awx/{{ awx_web_hostname }}.key"
+docker_compose_dir: "{{ playbook_dir }}/awx_compose"
+
+# Set pg_hostname if you have an external postgres server, otherwise
+# a new postgres service will be created
+pg_username: awx
+# pg_password should be random 10 character alphanumeric string, when postgresql is running on kubernetes
+# NB: it's a limitation of the "official" postgres helm chart
+pg_password: superpgpassword
+pg_database: awx
+
+# pg_hostname: mg06-lb-vip.shared.pcbl.local
+# pg_port: 5471
+
+# This will create or update a default admin (superuser) account in AWX, if not provided
+# then these default values are used
+admin_user: awx-admin
+admin_password: awx-admin
+
+# AWX Secret key
+# It's *very* important that this stay the same between upgrades or you will lose the ability to decrypt
+# your credentials
+secret_key: GPoseX4MmnaxPCbT9XZcGgdn0SWYZ2i9AqBJOjoStDZEda1kpk
+
+# By default a broadcast websocket secret will be generated.
+# If you would like to *rerun the playbook*, you need to set a unique password.
+# Otherwise it would generate a new one every playbook run.
+broadcast_websocket_secret: bTBN3eY203b0sp2LaceK
+# Build AWX with official logos
+# Requires cloning awx-logos repo as a sibling of this project.
+# Review the trademark guidelines at https://github.com/ansible/awx-logos/blob/master/TRADEMARKS.md
+awx_official: false
+
+# AWX project data folder. If you need access to the location where AWX stores the projects
+# it manages from the docker host, you can set this to turn it into a volume for the container.
+project_data_dir: "{{ playbook_dir }}/awx_projects"

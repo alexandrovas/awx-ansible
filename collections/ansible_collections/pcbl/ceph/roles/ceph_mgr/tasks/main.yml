@@ -1,0 +1,58 @@
+---
+# tasks file for ceph-mgr
+
+- name: Install ceph dashboard
+  ansible.builtin.apt:
+    name: ceph-mgr-dashboard
+    state: present
+
+- name: Dashboard block
+  when: ceph_dashboard_enable|bool
+  run_once: true
+  block:
+    - name: Enable dashboard
+      ansible.builtin.shell:
+        cmd: ceph mgr module enable dashboard
+
+    # - name: Set dashboard certificate
+    #   when: ceph_dashboard_ssl_enable|bool
+    #   run_once: false
+    #   ansible.builtin.shell:
+    #     cmd: "{{ item }}"
+    #   loop:
+    #     - "ceph dashboard set-ssl-certificate {{ ansible_hostname }} -i {{ ceph_dashboard_ssl_crt_file }}"
+    #     - "ceph dashboard set-ssl-certificate-key {{ ansible_hostname }} -i {{ ceph_dashboard_ssl_key_file }}"
+
+    - name: Set dashboard ports
+      ansible.builtin.shell:
+        cmd: "{{ item }}"
+      loop:
+        - "ceph config set mgr mgr/dashboard/server_port {{ ceph_dashboard_port }}"
+        - "ceph config set mgr mgr/dashboard/ssl_server_port {{ ceph_dashboard_ssl_port }}"
+
+    # - name: Enable or disable dashboard ssl
+    #   ansible.builtin.shell:
+    #     cmd: "ceph config set mgr mgr/dashboard/ssl {{ ceph_dashboard_ssl_enable|bool|string|lower }}"
+
+    - name: Create temp file with admin password
+      ansible.builtin.copy:
+        dest: "~/ceph_admin_password"
+        content: "{{ ceph_dashboard_administrator_password }}"
+        mode: 0700
+
+    - name: Create dashboard user with administrator role
+      ansible.builtin.shell:
+        cmd: ceph dashboard ac-user-create {{ ceph_dashboard_administartor_name }} -i ~/ceph_admin_password administrator
+      register: this
+      failed_when: this.rc !=0 and 'already exists' not in this.stderr
+
+    - name: Restart dashboard
+      run_once: false
+      ansible.builtin.shell:
+        cmd: ceph mgr module disable dashboard && ceph mgr module enable dashboard
+
+  always:
+    - name: Remove temp file with admin password
+      ansible.builtin.file:
+        path: "~/ceph_admin_password"
+        state: absent

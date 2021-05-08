@@ -1,0 +1,75 @@
+---
+# tasks file for ceph-common
+
+- name: Create ceph admin user
+  ansible.builtin.user:
+    name: "{{ ceph_admin_user }}"
+    shell: /bin/bash
+    comment: Ceph Administrator
+    state: present
+    home: "{{ ceph_admin_home_dir }}"
+    create_home: true
+    groups:
+      - sudo
+
+- name: Allow ceph admin user run sudo without password
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/ceph
+    content: |
+      {{ ceph_admin_user }} ALL = (root) NOPASSWD:ALL
+    owner: root
+    group: root
+    mode: 0640
+
+- name: Create directory .ssh
+  ansible.builtin.file:
+    path: "/home/{{ ceph_admin_user }}/.ssh"
+    state: directory
+    owner: "{{ ceph_admin_user }}"
+    group: "{{ ceph_admin_user }}"
+    mode: 0700
+
+- name: Generate ssh keypair on one host
+  run_once: true
+  block:
+    - community.crypto.openssh_keypair:
+        path: "/home/{{ ceph_admin_user }}/.ssh/id_rsa"
+        owner: "{{ ceph_admin_user }}"
+        group: "{{ ceph_admin_user }}"
+
+    - name: Slurp ssh private key
+      ansible.builtin.slurp:
+        src: "/home/{{ ceph_admin_user }}/.ssh/id_rsa"
+      register: ssh_private_key
+
+    - name: Slurp ssh public key
+      ansible.builtin.slurp:
+        src: "/home/{{ ceph_admin_user }}/.ssh/id_rsa.pub"
+      register: ssh_public_key
+
+- name: Copy ssh keys to all hosts
+  ansible.builtin.copy:
+    dest: "/home/{{ ceph_admin_user }}/.ssh/{{ item.dest }}"
+    content: "{{ item.content }}"
+    owner: "{{ ceph_admin_user }}"
+    group: "{{ ceph_admin_user }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { dest: id_rsa, content: "{{ ssh_private_key.content | b64decode }}", mode: "0600" }
+    - { dest: id_rsa.pub, content: "{{ ssh_public_key.content | b64decode }}", mode: "0644" }
+
+- name: Add ssh public key to authorized keys
+  ansible.builtin.authorized_key:
+    user: "{{ ceph_admin_user }}"
+    state: present
+    key: "{{ ssh_public_key.content | b64decode }}"
+
+- name: Install ceph packages
+  ansible.builtin.apt:
+    name:
+      - ceph-common
+      - ceph-mds
+      - ceph-osd
+      - ceph-mgr
+      - ceph-mon
+      - python-typing

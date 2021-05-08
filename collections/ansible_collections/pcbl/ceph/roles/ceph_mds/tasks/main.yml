@@ -1,0 +1,8 @@
+---
+# tasks file for ceph-mds
+
+- name: create ceph fs
+  when: ceph_fs_create|bool
+  run_once: true
+  ansible.builtin.shell:
+    cmd: "ceph fs volume create {{ ceph_fs_name }}"

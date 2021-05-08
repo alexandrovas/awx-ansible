@@ -1,0 +1,28 @@
+---
+# tasks file for ceph-admin
+
+- name: Install ceph deploy
+  ansible.builtin.apt:
+    name:
+      - ceph-deploy
+
+- name: Ceph-deploy comands
+  become_user: "{{ ceph_admin_user }}"
+  ansible.builtin.shell:
+    chdir: "~"
+    cmd: "{{ item }}"
+  loop:
+    - "ceph-deploy new {{ ceph_mon_hosts|join(' ') }}"
+    - "ceph-deploy install --release {{ ceph_release }} --no-adjust-repos {{ ceph_mon_hosts|intersect(ceph_mgr_hosts)|intersect(ceph_osd_hosts)|join(' ') }}"
+    - "ceph-deploy --overwrite-conf mon create-initial"
+    - "ceph-deploy admin {{ ceph_mon_hosts|intersect(ceph_mgr_hosts)|intersect(ceph_osd_hosts)|join(' ') }}"
+    - "ceph-deploy mgr create {{ ceph_mgr_hosts|join(' ') }}"
+    - "ceph-deploy mds create {{ ceph_mds_hosts|join(' ') }}"
+
+- name: Ceph-deploy osd create
+  become_user: "{{ ceph_admin_user }}"
+  shell:
+    chdir: "{{ ceph_deploy_directory }}"
+    cmd: ceph-deploy --overwrite-conf osd create --data {{ hostvars[item].ceph_blk_disk }} {{ item }}
+  when: hostvars[item].ceph_blk_disk is defined
+  loop: "{{ ceph_osd_hosts }}"

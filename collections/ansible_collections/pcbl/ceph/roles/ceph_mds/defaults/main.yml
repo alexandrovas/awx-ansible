@@ -1,0 +1,5 @@
+---
+# defaults file for ceph-mds
+
+ceph_fs_create: false
+ceph_fs_name: fs-storage

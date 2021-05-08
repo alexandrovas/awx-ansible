@@ -1,0 +1,11 @@
+---
+# defaults file for ceph-mgr
+
+ceph_dashboard_enable: false
+ceph_dashboard_administartor_name: admin
+ceph_dashboard_administrator_password: Str0ngP@sswOrd
+ceph_dashboard_ssl_enable: false
+ceph_dashboard_port: 8080
+ceph_dashboard_ssl_port: 8443
+ceph_dashboard_ssl_key_file: "/opt/certs/ceph/{{ ansible_fqdn }}.key"
+ceph_dashboard_ssl_crt_file: "/opt/certs/ceph/{{ ansible_fqdn }}.crt"
